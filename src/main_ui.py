@@ -1,23 +1,32 @@
 from PySide6.QtWidgets import QMainWindow, QFileDialog
-from PySide6.QtUiTools import loadUi
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtCore import QFile, QIODevice
 from src.dialog import AboutDialog
 import os
-
-# Import compiled resources
 import resources.img_rc
 
 class SoundSourceWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        # Load the UI file from ui/
-        ui_path = os.path.join(os.path.dirname(__file__), "../ui/intro.ui")
-        loadUi(ui_path, self)
+        # Load the UI file using QUiLoader
+        ui_path = os.path.join(os.path.dirname(__file__), "../ui/main_window.ui")
+        ui_file = QFile(ui_path)
+        if not ui_file.open(QIODevice.ReadOnly):
+            raise Exception(f"Cannot open {ui_path}: {ui_file.errorString()}")
+        loader = QUiLoader()
+        self.window = loader.load(ui_file, self)  # Store the loaded window
+        ui_file.close()
 
-        # Connect menu actions
-        self.actionadd_song.triggered.connect(self.add_song)
-        self.actionremove.triggered.connect(self.remove_song)
-        self.actionAdd_Playlist.triggered.connect(self.add_playlist)
-        self.action_About.triggered.connect(self.show_about)
+        # Set central widget and reassign menu/status bars
+        self.setCentralWidget(self.window.centralwidget)
+        self.setMenuBar(self.window.menubar)  # Use setMenuBar for proper integration
+        self.setStatusBar(self.window.statusbar)  # Use setStatusBar
+
+        # Connect menu actions from the loaded window
+        self.window.actionadd_song.triggered.connect(self.add_song)
+        self.window.actionremove.triggered.connect(self.remove_song)
+        self.window.actionAdd_Playlist.triggered.connect(self.add_playlist)
+        self.window.action_About.triggered.connect(self.show_about)
 
     def add_song(self):
         file_path, _ = QFileDialog.getOpenFileName(
